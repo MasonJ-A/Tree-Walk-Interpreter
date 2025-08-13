@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 
-public class lox{
+public class Lox{
     static boolean hadError = false;
     public static void main(String[] args) throws IOException{
         if (args.length > 1){ //if there is more than one argument exit

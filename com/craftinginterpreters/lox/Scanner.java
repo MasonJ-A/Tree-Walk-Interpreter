@@ -8,17 +8,18 @@ import java.util.Map;
 import static com.craftinginterpreters.lox.TokenType.*;
 
 public class Scanner {
-    private final String source;
-    private final List<Token> tokens = new ArrayList<>();
-
+    private final String source;//what is inputed into the scanner
+    private final List<Token> tokens = new ArrayList<>();//a list of all tokens in the scanner
+    //variables to manage the position in the source
     private int start = 0;
     private int current = 0;
     private int line = 1;
-
+    //initializer
     Scanner (String source){
         this.source = source;
     }
 
+    //runs scanToken until end of file
     List<Token> scanTokens(){
         while(!isAtEnd()){
             start = current;
@@ -28,10 +29,12 @@ public class Scanner {
         return tokens;
     }
 
+    //helper function for scanTokens that checks if source has been interated through
     private boolean isAtEnd() {
     return current >= source.length();
     }
 
+    //checks the current character in source to see if it is a token, then adds it to the ArrayList tokens
     private void scanToken(){
         char c = advance();
         switch (c) {
@@ -45,8 +48,67 @@ public class Scanner {
             case '+': addToken(PLUS); break;
             case ';': addToken(SEMICOLON); break;
             case '*': addToken(STAR); break; 
+            case '!':
+                addToken(match('=')? BANG_EQUAL:BANG);
+                break;
+            case '=':
+                addToken(match('=') ? EQUAL_EQUAL : EQUAL);
+                break;
+            case '<':
+                addToken(match('=') ? LESS_EQUAL : LESS);
+                break;
+            case '>':
+                addToken(match('=') ? GREATER_EQUAL : GREATER);
+                break;
+            case '/':
+                if (match('/')){
+                    while (peek()!= '\n' && !isAtEnd()) advance();
+                }
+                else addToken(SLASH);
+                break;
+            
+            case ' ':
+            case '\r':
+            case '\t':
+                break;
+            case '\n':
+                line++;
+                break;
+            case '"':
+                string();break;
+
+            default:
+                Lox.error(line, "unexpected character");
+                break;
         }
     }
+
+    private void string(){
+        while(peek()!='"' && !isAtEnd()){
+            if (peek() == '\n') line++;
+            advance();
+        }
+        if (isAtEnd()){
+            Lox.error(line, "Unterminated String");
+        }
+        advance();
+         String value = source.substring(start +1, current -1);
+         addToken(STRING, value);
+    }
+    
+    private char peek(){
+        if (isAtEnd())return '\0';
+        return source.charAt(current);
+    }
+
+    private boolean match(char expected){
+        if (isAtEnd()) return false;
+        if (source.charAt(current) != expected) return false;
+        current++;
+        return true;
+
+    }
+    //helper function for scanToken that returns the current character than iterates to the nect
     private char advance(){
         return source.charAt(current++);
     }
@@ -55,7 +117,7 @@ public class Scanner {
         addToken(type,null);
     }
     
-    private void addToken(TokenType type, Object literal){
+    private void addToken(TokenType type, Object literal){//adds th inputed token to the list tokens
         String text = source.substring(start, current);
         tokens.add(new Token(type, text, literal, line));
 
